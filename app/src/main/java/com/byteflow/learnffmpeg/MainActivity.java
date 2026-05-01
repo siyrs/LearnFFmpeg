@@ -50,7 +50,8 @@ public class MainActivity extends AppCompatActivity {
             "FFmpeg + single audio recorder",
             "FFmpeg + AV recorder",
             "FFmpeg + stream media player",
-            "FFmpeg + MediaCodec player"
+            "FFmpeg + MediaCodec player",
+            "Pixel Pet Game"
     };
 
     private static final int FF_ANATIVE_WINDOWS_EXAMPLE = 0;
@@ -62,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int FF_AV_RECORDER = 6;
     private static final int FF_STREAM_MEDIA_PLAYER = 7;
     private static final int FF_MEDIACODEC_PLAYER = 8;
+    private static final int PIXEL_PET_GAME = 9;
 
     private int mSampleSelectedIndex = -1;
 
@@ -166,6 +168,9 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case FF_MEDIACODEC_PLAYER:
                         startActivity(new Intent(MainActivity.this, FFMediaCodecPlayerActivity.class));
+                        break;
+                    case PIXEL_PET_GAME:
+                        startActivity(new Intent(MainActivity.this, GameActivity.class));
                         break;
                         default:
                             break;
