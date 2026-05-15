@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pixel Pet Game</title>
+    <style>
+        body { margin: 0; padding: 0; background-color: #222; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; font-family: monospace; }
+        canvas { border: 2px solid #555; background-color: #87CEEB; }
+        #controls { margin-top: 10px; text-align: center; }
+        button { padding: 8px 16px; margin: 0 5px; font-family: monospace; font-size: 16px; cursor: pointer; }
+        #stats { margin-bottom: 10px; text-align: center; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div>
+        <div id="stats">
+            Hunger: <span id="hunger">50</span> |
+            Happiness: <span id="happiness">50</span> |
+            Energy: <span id="energy">50</span>
+        </div>
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <div id="controls">
+            <button onclick="feedPet()">Feed</button>
+            <button onclick="playWithPet()">Play</button>
+            <button onclick="sleepPet()">Sleep</button>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
