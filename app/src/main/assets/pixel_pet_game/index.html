@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pixel Pet Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #87CEEB; /* Sky blue */
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none;
+        }
+        #gameCanvas {
+            image-rendering: pixelated;
+            border: 4px solid #333;
+            background-color: #90EE90; /* Light green grass */
+            margin-top: 20px;
+        }
+        .controls {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            background-color: #f0f0f0;
+            border: 2px solid #333;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:active {
+            background-color: #ccc;
+        }
+        #status {
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="200" height="200"></canvas>
+    <div id="status">Hunger: 50 | Happiness: 50</div>
+    <div class="controls">
+        <button id="feedBtn">Feed</button>
+        <button id="playBtn">Play</button>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
