@@ -46,6 +46,9 @@
         <activity android:name=".FFMediaCodecPlayerActivity"
             android:screenOrientation="portrait"/>
 
+        <activity android:name=".PixelPetActivity"
+            android:screenOrientation="portrait"/>
+
         <provider
             android:name=".MyFileProvider"
             android:authorities="com.byteflow.learnffmpeg.fileprovider"
