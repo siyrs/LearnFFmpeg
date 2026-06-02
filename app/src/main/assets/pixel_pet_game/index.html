@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Pet Game</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        canvas {
+            background-color: white;
+            border: 2px solid black;
+        }
+        button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="300" height="300"></canvas>
+    <div class="controls">
+        <button id="feedBtn">Feed</button>
+        <button id="playBtn">Play</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let pet = { x: 130, y: 130, size: 40, hunger: 50, happiness: 50 };
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'green';
+            ctx.fillRect(pet.x, pet.y, pet.size, pet.size);
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText('Hunger: ' + Math.floor(pet.hunger), 10, 30);
+            ctx.fillText('Happiness: ' + Math.floor(pet.happiness), 10, 60);
+        }
+
+        function update() {
+            pet.hunger = Math.min(100, pet.hunger + 0.1);
+            pet.happiness = Math.max(0, pet.happiness - 0.1);
+            draw();
+            requestAnimationFrame(update);
+        }
+
+        document.getElementById('feedBtn').addEventListener('click', () => {
+            pet.hunger = Math.max(0, pet.hunger - 10);
+        });
+
+        document.getElementById('playBtn').addEventListener('click', () => {
+            pet.happiness = Math.min(100, pet.happiness + 10);
+        });
+
+        update();
+    </script>
+</body>
+</html>
