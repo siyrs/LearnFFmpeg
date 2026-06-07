@@ -1,0 +1,67 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #222;
+    color: #fff;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#game-container {
+    background-color: #333;
+    border: 4px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+#game-canvas {
+    background-color: #87CEEB; /* Sky blue background */
+    border: 2px solid #fff;
+    image-rendering: pixelated; /* Essential for crisp pixel art */
+    margin-bottom: 15px;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+}
+
+.stats p {
+    margin: 0;
+}
+
+.controls button {
+    background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-family: inherit;
+    font-weight: bold;
+}
+
+.controls button:active {
+    background-color: #3e8e41;
+}
+
+#btn-play {
+    background-color: #008CBA; /* Blue */
+}
+
+#btn-play:active {
+    background-color: #007399;
+}
