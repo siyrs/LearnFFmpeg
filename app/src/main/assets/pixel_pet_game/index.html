@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pixel Pet Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <div id="ui-controls">
+            <button id="feedBtn">Feed</button>
+            <button id="playBtn">Play</button>
+            <button id="cleanBtn">Clean</button>
+        </div>
+        <div id="stats">
+            <p>Hunger: <span id="hungerValue">0</span></p>
+            <p>Happiness: <span id="happinessValue">100</span></p>
+            <p>Health: <span id="healthValue">100</span></p>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
