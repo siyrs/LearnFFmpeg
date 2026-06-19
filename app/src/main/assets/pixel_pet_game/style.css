@@ -1,0 +1,66 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #2c3e50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Courier New', Courier, monospace;
+    color: white;
+}
+
+#game-container {
+    background-color: #34495e;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+canvas {
+    background-color: #ecf0f1;
+    border: 4px solid #bdc3c7;
+    border-radius: 8px;
+    image-rendering: pixelated; /* Crucial for pixel art style */
+    display: block;
+    margin: 0 auto 20px auto;
+}
+
+#controls {
+    margin-bottom: 15px;
+}
+
+button {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-size: 16px;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 4px #c0392b;
+}
+
+button:active {
+    box-shadow: 0 0 #c0392b;
+    transform: translateY(4px);
+}
+
+button#playBtn {
+    background-color: #3498db;
+    box-shadow: 0 4px #2980b9;
+}
+
+button#playBtn:active {
+    box-shadow: 0 0 #2980b9;
+}
+
+#status {
+    font-size: 14px;
+    display: flex;
+    justify-content: space-around;
+}
