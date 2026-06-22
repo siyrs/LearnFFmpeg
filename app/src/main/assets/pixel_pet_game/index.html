@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pixel Pet Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #87CEEB; /* Sky blue */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            max-height: 800px;
+            background-color: #90EE90; /* Light green grass */
+            border: 4px solid #333;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            image-rendering: pixelated; /* Essential for pixel art */
+            border: 2px solid #555;
+            background-color: #E0F7FA;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        #ui-container {
+            height: 120px;
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-family: inherit;
+            background-color: #FFF;
+            border: 2px solid #000;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px #000;
+            transition: transform 0.1s;
+        }
+
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px #000;
+        }
+
+        .stat-bar-container {
+            width: 30%;
+            background-color: #555;
+            border: 2px solid #fff;
+            height: 20px;
+            position: relative;
+        }
+
+        .stat-bar {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 100%;
+            transition: width 0.3s;
+        }
+
+        .stat-label {
+            position: absolute;
+            top: 0;
+            left: 5px;
+            line-height: 20px;
+            font-size: 12px;
+            text-shadow: 1px 1px 0 #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="canvas-container">
+            <canvas id="gameCanvas" width="256" height="256"></canvas>
+        </div>
+        <div id="ui-container">
+            <div class="stats">
+                <div class="stat-bar-container">
+                    <div class="stat-bar" id="hunger-bar" style="background-color: #ff5722;"></div>
+                    <div class="stat-label">HUNGER</div>
+                </div>
+                <div class="stat-bar-container">
+                    <div class="stat-bar" id="happiness-bar" style="background-color: #ffeb3b;"></div>
+                    <div class="stat-label">HAPPINESS</div>
+                </div>
+                <div class="stat-bar-container">
+                    <div class="stat-bar" id="energy-bar" style="background-color: #03a9f4;"></div>
+                    <div class="stat-label">ENERGY</div>
+                </div>
+            </div>
+            <div class="controls">
+                <button id="btn-feed">Feed</button>
+                <button id="btn-play">Play</button>
+                <button id="btn-sleep">Sleep</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Pet State
+        let pet = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            size: 32,
+            hunger: 100,
+            happiness: 100,
+            energy: 100,
+            state: 'idle', // idle, eating, playing, sleeping
+            frame: 0,
+            tick: 0,
+            color: '#FF69B4' // Hot pink pet
+        };
+
+        // UI Elements
+        const hungerBar = document.getElementById('hunger-bar');
+        const happinessBar = document.getElementById('happiness-bar');
+        const energyBar = document.getElementById('energy-bar');
+
+        const btnFeed = document.getElementById('btn-feed');
+        const btnPlay = document.getElementById('btn-play');
+        const btnSleep = document.getElementById('btn-sleep');
+
+        // Sprite drawing (simple pixel art shapes)
+        function drawPet() {
+            ctx.fillStyle = pet.color;
+
+            // Bobbing effect based on frame
+            let yOffset = pet.frame === 1 ? -2 : 0;
+            if (pet.state === 'sleeping') yOffset = 5;
+
+            // Body
+            ctx.fillRect(pet.x - 16, pet.y - 16 + yOffset, 32, 32);
+
+            // Eyes
+            ctx.fillStyle = '#000';
+            if (pet.state === 'sleeping') {
+                ctx.fillRect(pet.x - 8, pet.y - 4 + yOffset, 4, 2);
+                ctx.fillRect(pet.x + 4, pet.y - 4 + yOffset, 4, 2);
+            } else {
+                ctx.fillRect(pet.x - 8, pet.y - 8 + yOffset, 4, 8);
+                ctx.fillRect(pet.x + 4, pet.y - 8 + yOffset, 4, 8);
+            }
+
+            // Mouth
+            if (pet.state === 'eating') {
+                ctx.fillRect(pet.x - 4, pet.y + 4 + yOffset, 8, 6);
+            } else if (pet.happiness > 50) {
+                ctx.fillRect(pet.x - 4, pet.y + 4 + yOffset, 8, 2);
+                ctx.fillRect(pet.x - 6, pet.y + 2 + yOffset, 2, 2);
+                ctx.fillRect(pet.x + 4, pet.y + 2 + yOffset, 2, 2);
+            } else {
+                ctx.fillRect(pet.x - 4, pet.y + 6 + yOffset, 8, 2);
+            }
+
+            // Animation indicators
+            if (pet.state === 'sleeping') {
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Courier New';
+                ctx.fillText('Z', pet.x + 16, pet.y - 16 + (pet.tick % 20 < 10 ? -2 : 0));
+                ctx.fillText('z', pet.x + 24, pet.y - 24 + (pet.tick % 20 < 10 ? -2 : 0));
+            } else if (pet.state === 'eating') {
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(pet.x - 20, pet.y + 8, 8, 8); // food piece
+            } else if (pet.state === 'playing') {
+                ctx.fillStyle = '#FF0000';
+                ctx.fillRect(pet.x + 16, pet.y - 8 + yOffset, 8, 8); // ball
+            }
+        }
+
+        function updateBars() {
+            hungerBar.style.width = pet.hunger + '%';
+            happinessBar.style.width = pet.happiness + '%';
+            energyBar.style.width = pet.energy + '%';
+
+            // Change colors if low
+            hungerBar.style.backgroundColor = pet.hunger < 30 ? '#f44336' : '#ff5722';
+            happinessBar.style.backgroundColor = pet.happiness < 30 ? '#f44336' : '#ffeb3b';
+            energyBar.style.backgroundColor = pet.energy < 30 ? '#f44336' : '#03a9f4';
+        }
+
+        function update() {
+            pet.tick++;
+
+            // Animation frame toggle
+            if (pet.tick % 30 === 0) {
+                pet.frame = pet.frame === 0 ? 1 : 0;
+            }
+
+            // Stat decay
+            if (pet.tick % 60 === 0) { // Every roughly 1 second
+                if (pet.state !== 'eating') pet.hunger = Math.max(0, pet.hunger - 1);
+                if (pet.state !== 'playing') pet.happiness = Math.max(0, pet.happiness - 1);
+                if (pet.state !== 'sleeping') {
+                    pet.energy = Math.max(0, pet.energy - 0.5);
+                } else {
+                    pet.energy = Math.min(100, pet.energy + 5);
+                    if (pet.energy >= 100) pet.state = 'idle';
+                }
+            }
+
+            updateBars();
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Background elements (simple room)
+            ctx.fillStyle = '#D2B48C'; // Floor
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+            drawPet();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Interactions
+        btnFeed.addEventListener('click', () => {
+            if (pet.state === 'sleeping') return;
+            pet.state = 'eating';
+            pet.hunger = Math.min(100, pet.hunger + 20);
+            setTimeout(() => { if(pet.state === 'eating') pet.state = 'idle'; }, 2000);
+        });
+
+        btnPlay.addEventListener('click', () => {
+            if (pet.state === 'sleeping') return;
+            if (pet.energy < 20) return; // Too tired to play
+            pet.state = 'playing';
+            pet.happiness = Math.min(100, pet.happiness + 20);
+            pet.energy = Math.max(0, pet.energy - 10);
+            setTimeout(() => { if(pet.state === 'playing') pet.state = 'idle'; }, 2000);
+        });
+
+        btnSleep.addEventListener('click', () => {
+            if (pet.state === 'sleeping') {
+                pet.state = 'idle'; // Wake up
+            } else {
+                pet.state = 'sleeping';
+            }
+        });
+
+        // Start game
+        gameLoop();
+    </script>
+</body>
+</html>
