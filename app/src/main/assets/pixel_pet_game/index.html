@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pixel Pet</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none; /* Prevent scrolling on touch */
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 400px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        #stats-bar {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background-color: #333;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 300px;
+            background-color: #87CEEB; /* Sky blue */
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated; /* Crucial for pixel art */
+        }
+
+        #controls {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background-color: #eee;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            border: 2px solid #333;
+            border-radius: 5px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            user-select: none;
+        }
+
+        button:active {
+            transform: scale(0.95);
+            background-color: #ddd;
+        }
+
+        #message-box {
+            text-align: center;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #d32f2f;
+            height: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="stats-bar">
+        <div class="stat">
+            <span>Hunger</span>
+            <span id="stat-hunger" class="stat-value">100</span>
+        </div>
+        <div class="stat">
+            <span>Happy</span>
+            <span id="stat-happy" class="stat-value">100</span>
+        </div>
+        <div class="stat">
+            <span>Energy</span>
+            <span id="stat-energy" class="stat-value">100</span>
+        </div>
+    </div>
+
+    <div id="message-box"></div>
+
+    <div id="canvas-container">
+        <canvas id="gameCanvas" width="400" height="300"></canvas>
+    </div>
+
+    <div id="controls">
+        <button id="btn-feed">Feed</button>
+        <button id="btn-play">Play</button>
+        <button id="btn-sleep">Sleep</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // UI Elements
+    const elHunger = document.getElementById('stat-hunger');
+    const elHappy = document.getElementById('stat-happy');
+    const elEnergy = document.getElementById('stat-energy');
+    const elMessage = document.getElementById('message-box');
+
+    // Buttons
+    const btnFeed = document.getElementById('btn-feed');
+    const btnPlay = document.getElementById('btn-play');
+    const btnSleep = document.getElementById('btn-sleep');
+
+    // Pet State
+    let pet = {
+        x: 200,
+        y: 200,
+        size: 40,
+        state: 'idle', // idle, eating, playing, sleeping, dead
+        hunger: 100,
+        happy: 100,
+        energy: 100,
+        frame: 0,
+        facingRight: true,
+        moveTargetX: 200
+    };
+
+    let isSleeping = false;
+    let messageTimer = null;
+    let gameLoop;
+    let statDecreaseLoop;
+
+    function showMessage(msg) {
+        elMessage.innerText = msg;
+        clearTimeout(messageTimer);
+        messageTimer = setTimeout(() => {
+            elMessage.innerText = "";
+        }, 3000);
+    }
+
+    function updateStatsUI() {
+        elHunger.innerText = Math.max(0, Math.round(pet.hunger));
+        elHappy.innerText = Math.max(0, Math.round(pet.happy));
+        elEnergy.innerText = Math.max(0, Math.round(pet.energy));
+
+        // Color coding
+        elHunger.style.color = pet.hunger < 30 ? 'red' : 'white';
+        elHappy.style.color = pet.happy < 30 ? 'red' : 'white';
+        elEnergy.style.color = pet.energy < 30 ? 'red' : 'white';
+    }
+
+    // Actions
+    btnFeed.addEventListener('click', () => {
+        if (pet.state === 'dead') return;
+        isSleeping = false;
+        pet.state = 'eating';
+        pet.hunger = Math.min(100, pet.hunger + 30);
+        pet.energy = Math.max(0, pet.energy - 5);
+        showMessage("Yum!");
+        updateStatsUI();
+        setTimeout(() => { if (pet.state !== 'dead') pet.state = 'idle'; }, 2000);
+    });
+
+    btnPlay.addEventListener('click', () => {
+        if (pet.state === 'dead') return;
+        if (pet.energy < 20) {
+            showMessage("Too tired to play!");
+            return;
+        }
+        isSleeping = false;
+        pet.state = 'playing';
+        pet.happy = Math.min(100, pet.happy + 20);
+        pet.energy = Math.max(0, pet.energy - 20);
+        pet.hunger = Math.max(0, pet.hunger - 10);
+        showMessage("Wheee!");
+        updateStatsUI();
+
+        // Make pet jump around
+        let jumps = 0;
+        let jumpInterval = setInterval(() => {
+            pet.y = jumps % 2 === 0 ? 150 : 200;
+            jumps++;
+            if(jumps > 5) {
+                clearInterval(jumpInterval);
+                pet.y = 200;
+                if (pet.state !== 'dead') pet.state = 'idle';
+            }
+        }, 300);
+    });
+
+    btnSleep.addEventListener('click', () => {
+        if (pet.state === 'dead') return;
+        isSleeping = !isSleeping;
+        if (isSleeping) {
+            pet.state = 'sleeping';
+            pet.y = 220; // Lie down
+            showMessage("Zzz...");
+        } else {
+            pet.state = 'idle';
+            pet.y = 200;
+            showMessage("Woke up!");
+        }
+    });
+
+    // Draw functions
+    function drawPixelRect(x, y, w, h, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+    }
+
+    function drawPet() {
+        ctx.save();
+
+        // Basic pixel pet drawing
+        let px = pet.x - pet.size/2;
+        let py = pet.y - pet.size;
+        let s = pet.size;
+        let ps = s / 8; // Pixel size unit
+
+        // Body color
+        let bodyColor = '#FFD700'; // Gold/Yellow
+        if (pet.hunger < 30 || pet.happy < 30) bodyColor = '#BDB76B'; // Sick color
+        if (pet.state === 'dead') bodyColor = '#808080'; // Gray
+
+        // Bobbing animation for idle
+        let yOffset = 0;
+        if (pet.state === 'idle' || pet.state === 'eating') {
+            yOffset = Math.sin(Date.now() / 200) * ps;
+        }
+        py += yOffset;
+
+        // Draw Body (8x8 grid conceptually)
+        drawPixelRect(px + ps*2, py, ps*4, ps*8, bodyColor); // Main body
+        drawPixelRect(px + ps, py + ps*2, ps*6, ps*5, bodyColor); // Thicker middle
+
+        // Ears
+        drawPixelRect(px + ps, py - ps, ps*2, ps*2, bodyColor);
+        drawPixelRect(px + ps*5, py - ps, ps*2, ps*2, bodyColor);
+
+        // Eyes
+        let eyeColor = pet.state === 'dead' ? '#000' : '#000';
+
+        if (pet.state === 'sleeping' || pet.state === 'dead') {
+            // Closed eyes
+            drawPixelRect(px + ps*2, py + ps*3, ps*2, ps, '#333');
+            drawPixelRect(px + ps*5, py + ps*3, ps*2, ps, '#333');
+        } else if (pet.state === 'eating') {
+            // Happy eyes ^ ^
+            drawPixelRect(px + ps*2, py + ps*2, ps, ps, '#000');
+            drawPixelRect(px + ps*3, py + ps*3, ps, ps, '#000');
+
+            drawPixelRect(px + ps*5, py + ps*2, ps, ps, '#000');
+            drawPixelRect(px + ps*6, py + ps*3, ps, ps, '#000');
+        } else {
+            // Normal eyes
+            drawPixelRect(px + ps*2, py + ps*2, ps, ps*2, '#000');
+            drawPixelRect(px + ps*5, py + ps*2, ps, ps*2, '#000');
+            // Pupils
+            let lookDir = pet.facingRight ? 1 : 0;
+            drawPixelRect(px + ps*2 + lookDir*ps, py + ps*2, ps, ps, '#FFF');
+            drawPixelRect(px + ps*5 + lookDir*ps, py + ps*2, ps, ps, '#FFF');
+        }
+
+        // Mouth
+        if (pet.state === 'playing' || pet.state === 'eating') {
+            drawPixelRect(px + ps*3, py + ps*5, ps*2, ps*2, '#FF69B4'); // Open mouth
+        } else if (pet.state === 'sleeping') {
+            drawPixelRect(px + ps*3, py + ps*5, ps*2, ps, '#333'); // closed
+            // Zzz
+            if (Math.floor(Date.now() / 500) % 2 === 0) {
+                 ctx.fillStyle = '#FFF';
+                 ctx.font = '20px Courier';
+                 ctx.fillText('z', px + ps*8, py - ps);
+                 ctx.fillText('Z', px + ps*10, py - ps*3);
+            }
+        } else {
+             drawPixelRect(px + ps*3, py + ps*5, ps*2, ps, '#333'); // closed
+        }
+
+        // Legs
+        if (pet.state !== 'sleeping') {
+            let legOffset = 0;
+            if (pet.state === 'idle' && pet.x !== pet.moveTargetX) {
+                legOffset = Math.sin(Date.now() / 100) * ps;
+            }
+            drawPixelRect(px + ps*2, py + ps*8 + (legOffset>0?ps:0), ps*1.5, ps*1.5, '#000');
+            drawPixelRect(px + ps*4.5, py + ps*8 + (legOffset<0?ps:0), ps*1.5, ps*1.5, '#000');
+        }
+
+        ctx.restore();
+    }
+
+    function drawEnvironment() {
+        // Floor
+        ctx.fillStyle = '#8B4513'; // Dirt brown
+        ctx.fillRect(0, 240, canvas.width, 60);
+
+        ctx.fillStyle = '#228B22'; // Grass green
+        ctx.fillRect(0, 230, canvas.width, 10);
+
+        // Simple pixel clouds
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        let t = Date.now() / 50;
+        let c1x = (t * 0.5) % (canvas.width + 100) - 100;
+        ctx.fillRect(c1x, 50, 40, 20);
+        ctx.fillRect(c1x + 10, 40, 20, 10);
+        ctx.fillRect(c1x - 10, 60, 60, 10);
+
+        let c2x = (t * 0.3 + 200) % (canvas.width + 100) - 100;
+        ctx.fillRect(c2x, 80, 50, 20);
+        ctx.fillRect(c2x + 10, 70, 30, 10);
+    }
+
+    // Logic updates
+    function updateLogic() {
+        if (pet.state === 'dead') return;
+
+        // Random movement in idle
+        if (pet.state === 'idle') {
+            if (Math.abs(pet.x - pet.moveTargetX) < 2) {
+                if (Math.random() < 0.02) {
+                    pet.moveTargetX = 50 + Math.random() * 300;
+                }
+            } else {
+                let speed = 1;
+                if (pet.x < pet.moveTargetX) {
+                    pet.x += speed;
+                    pet.facingRight = true;
+                } else {
+                    pet.x -= speed;
+                    pet.facingRight = false;
+                }
+            }
+        }
+
+        // Sleeping regains energy
+        if (pet.state === 'sleeping') {
+            pet.energy = Math.min(100, pet.energy + 0.1);
+        }
+    }
+
+    function gameLoopFn() {
+        // Clear
+        ctx.fillStyle = '#87CEEB'; // Sky
+        if (isSleeping) ctx.fillStyle = '#191970'; // Night sky
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        drawEnvironment();
+        updateLogic();
+        drawPet();
+
+        requestAnimationFrame(gameLoopFn);
+    }
+
+    function statDecrease() {
+        if (pet.state === 'dead') return;
+
+        pet.hunger -= 1;
+        pet.happy -= 0.5;
+        if (!isSleeping) {
+            pet.energy -= 0.5;
+        }
+
+        if (pet.hunger <= 0 || pet.happy <= 0 || pet.energy <= 0) {
+            pet.hunger = Math.max(0, pet.hunger);
+            pet.happy = Math.max(0, pet.happy);
+            pet.energy = Math.max(0, pet.energy);
+            pet.state = 'dead';
+            showMessage("Oh no! Pet has passed away.");
+        }
+
+        updateStatsUI();
+    }
+
+    // Init
+    updateStatsUI();
+    gameLoopFn();
+    statDecreaseLoop = setInterval(statDecrease, 2000); // Decrease stats every 2 seconds for demo
+
+</script>
+</body>
+</html>
