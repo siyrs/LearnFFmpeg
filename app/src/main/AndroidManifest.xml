@@ -45,6 +45,7 @@
             android:screenOrientation="portrait"/>
         <activity android:name=".FFMediaCodecPlayerActivity"
             android:screenOrientation="portrait"/>
+        <activity android:name=".PixelPetActivity" />
 
         <provider
             android:name=".MyFileProvider"
