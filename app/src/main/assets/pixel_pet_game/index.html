@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pixel Pet Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #2c3e50;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+        }
+        #gameCanvas {
+            background-color: #ecf0f1;
+            border: 4px solid #34495e;
+            image-rendering: pixelated; /* To ensure pixel art stays crisp */
+            max-width: 100%;
+            max-height: 100%;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-family: inherit;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px #2980b9;
+        }
+        button:active {
+            box-shadow: 0 0 #2980b9;
+            transform: translateY(4px);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="300" height="300"></canvas>
+    <div id="controls">
+        <button id="feedBtn">Feed</button>
+        <button id="playBtn">Play</button>
+        <button id="sleepBtn">Sleep</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Pet State
+        let pet = {
+            x: canvas.width / 2,
+            y: canvas.height / 2 + 30,
+            size: 30,
+            hunger: 50,
+            happiness: 50,
+            energy: 100,
+            state: 'idle', // idle, eating, playing, sleeping
+            color: '#e74c3c'
+        };
+
+        // Game Loop Variables
+        let lastTime = 0;
+        let animationTimer = 0;
+        let frame = 0;
+
+        // UI Updates
+        function drawUI() {
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = '14px Courier New';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Hunger: ${Math.round(pet.hunger)}`, 10, 20);
+            ctx.fillText(`Happy:  ${Math.round(pet.happiness)}`, 10, 40);
+            ctx.fillText(`Energy: ${Math.round(pet.energy)}`, 10, 60);
+
+            let statusText = "Status: " + pet.state.toUpperCase();
+            ctx.textAlign = 'right';
+            ctx.fillText(statusText, canvas.width - 10, 20);
+        }
+
+        function drawPet() {
+            ctx.save();
+            ctx.translate(pet.x, pet.y);
+
+            // Bounce animation if idle or playing
+            let bounce = 0;
+            if (pet.state === 'idle' || pet.state === 'playing') {
+                 bounce = Math.sin(frame * 0.1) * 5;
+            } else if (pet.state === 'sleeping') {
+                 // Sleeping state: flat and still
+                 ctx.scale(1.2, 0.8);
+            }
+
+            // Body
+            ctx.fillStyle = pet.color;
+            ctx.fillRect(-pet.size / 2, -pet.size + bounce, pet.size, pet.size);
+
+            // Eyes
+            ctx.fillStyle = 'white';
+            ctx.fillRect(-10, -pet.size + 10 + bounce, 6, 6);
+            ctx.fillRect(4, -pet.size + 10 + bounce, 6, 6);
+
+            // Pupils
+            ctx.fillStyle = 'black';
+            if (pet.state === 'sleeping') {
+                // Closed eyes
+                ctx.fillRect(-10, -pet.size + 12 + bounce, 6, 2);
+                ctx.fillRect(4, -pet.size + 12 + bounce, 6, 2);
+            } else {
+                ctx.fillRect(-8, -pet.size + 12 + bounce, 2, 2);
+                ctx.fillRect(6, -pet.size + 12 + bounce, 2, 2);
+            }
+
+            // Mouth
+            if (pet.state === 'eating') {
+                 ctx.fillRect(-4, -pet.size + 20 + bounce, 8, 8); // Open mouth
+            } else if (pet.happiness > 40) {
+                 ctx.fillRect(-4, -pet.size + 22 + bounce, 8, 2); // Smile
+                 ctx.fillRect(-6, -pet.size + 20 + bounce, 2, 2);
+                 ctx.fillRect(4, -pet.size + 20 + bounce, 2, 2);
+            } else {
+                 ctx.fillRect(-4, -pet.size + 22 + bounce, 8, 2); // Sad
+                 ctx.fillRect(-6, -pet.size + 24 + bounce, 2, 2);
+                 ctx.fillRect(4, -pet.size + 24 + bounce, 2, 2);
+            }
+
+            ctx.restore();
+        }
+
+        function update(dt) {
+            // Stats decay
+            if (pet.state !== 'sleeping') {
+                pet.hunger = Math.min(100, pet.hunger + 0.5 * (dt/1000));
+                pet.happiness = Math.max(0, pet.happiness - 0.5 * (dt/1000));
+                pet.energy = Math.max(0, pet.energy - 0.5 * (dt/1000));
+            } else {
+                pet.energy = Math.min(100, pet.energy + 5 * (dt/1000));
+                if (pet.energy >= 100) {
+                    pet.state = 'idle';
+                }
+            }
+
+            if (pet.hunger > 80 || pet.happiness < 20) {
+                pet.color = '#c0392b'; // Dark red/sad
+            } else {
+                pet.color = '#e74c3c'; // Normal
+            }
+
+            // Action timer
+            if (pet.state === 'eating' || pet.state === 'playing') {
+                animationTimer -= dt;
+                if (animationTimer <= 0) {
+                    pet.state = 'idle';
+                }
+            }
+        }
+
+        function gameLoop(timestamp) {
+            let dt = timestamp - lastTime;
+            lastTime = timestamp;
+            frame++;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            update(dt);
+            drawPet();
+            drawUI();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Controls
+        document.getElementById('feedBtn').addEventListener('click', () => {
+            if (pet.state !== 'sleeping') {
+                pet.state = 'eating';
+                pet.hunger = Math.max(0, pet.hunger - 20);
+                animationTimer = 2000;
+            }
+        });
+
+        document.getElementById('playBtn').addEventListener('click', () => {
+             if (pet.state !== 'sleeping' && pet.energy > 10) {
+                pet.state = 'playing';
+                pet.happiness = Math.min(100, pet.happiness + 20);
+                pet.energy -= 10;
+                animationTimer = 2000;
+            }
+        });
+
+        document.getElementById('sleepBtn').addEventListener('click', () => {
+            if (pet.state !== 'sleeping') {
+                pet.state = 'sleeping';
+            } else {
+                pet.state = 'idle'; // Wake up
+            }
+        });
+
+        // Start game
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
