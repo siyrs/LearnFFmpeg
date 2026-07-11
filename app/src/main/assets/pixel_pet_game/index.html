@@ -16,29 +16,65 @@
             height: 100vh;
             margin: 0;
             user-select: none;
+            box-sizing: border-box;
         }
         h1 {
-            margin-bottom: 10px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            font-size: 2em;
         }
         #gameCanvas {
             background-color: #95a5a6;
             border: 4px solid #34495e;
             border-radius: 8px;
             image-rendering: pixelated; /* Important for crisp pixel art */
+            margin-bottom: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 20px;
+            margin-bottom: 20px;
+            width: 300px;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .stat-label {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .stat-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: #34495e;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .stat-bar {
+            height: 100%;
+            width: 50%; /* Default */
+            background-color: #2ecc71;
+            transition: width 0.3s, background-color 0.3s;
         }
         .controls {
-            margin-top: 20px;
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 15px;
+            width: 300px;
         }
         button {
-            padding: 10px 20px;
+            padding: 12px 10px;
             font-size: 16px;
             font-weight: bold;
+            font-family: inherit;
             background-color: #e74c3c;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             box-shadow: 0 4px #c0392b;
             transition: all 0.1s;
@@ -47,21 +83,40 @@
             box-shadow: 0 0 #c0392b;
             transform: translateY(4px);
         }
-        .stats {
-            margin-top: 15px;
-            display: flex;
-            gap: 20px;
-            font-size: 18px;
-        }
+        #btnFeed { background-color: #f1c40f; box-shadow: 0 4px #d4ac0d; color: #2c3e50; }
+        #btnFeed:active { box-shadow: 0 0 #d4ac0d; }
+        #btnPlay { background-color: #9b59b6; box-shadow: 0 4px #8e44ad; }
+        #btnPlay:active { box-shadow: 0 0 #8e44ad; }
+        #btnClean { background-color: #3498db; box-shadow: 0 4px #2980b9; }
+        #btnClean:active { box-shadow: 0 0 #2980b9; }
+        #btnSleep { background-color: #34495e; box-shadow: 0 4px #2c3e50; }
+        #btnSleep:active { box-shadow: 0 0 #2c3e50; }
+
+        /* Hidden text spans for raw numbers if we want them, mostly for game.js to hook into */
+        .raw-val { display: none; }
     </style>
 </head>
 <body>
 
     <h1>Pixel Pet</h1>
 
-    <div class="stats">
-        <div>Hunger: <span id="hungerValue">50</span>%</div>
-        <div>Happiness: <span id="happinessValue">50</span>%</div>
+    <div class="stats-container">
+        <div class="stat-item">
+            <div class="stat-label">Hunger <span class="raw-val" id="hungerValue">50</span></div>
+            <div class="stat-bar-container"><div id="hungerBar" class="stat-bar"></div></div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Happiness <span class="raw-val" id="happinessValue">50</span></div>
+            <div class="stat-bar-container"><div id="happinessBar" class="stat-bar"></div></div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Hygiene <span class="raw-val" id="hygieneValue">50</span></div>
+            <div class="stat-bar-container"><div id="hygieneBar" class="stat-bar"></div></div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Energy <span class="raw-val" id="energyValue">50</span></div>
+            <div class="stat-bar-container"><div id="energyBar" class="stat-bar"></div></div>
+        </div>
     </div>
 
     <canvas id="gameCanvas" width="300" height="300"></canvas>
@@ -69,6 +124,8 @@
     <div class="controls">
         <button id="btnFeed">Feed</button>
         <button id="btnPlay">Play</button>
+        <button id="btnClean">Clean</button>
+        <button id="btnSleep">Sleep</button>
     </div>
 
     <script src="game.js"></script>
