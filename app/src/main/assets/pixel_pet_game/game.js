@@ -25,6 +25,36 @@ let lastTime = 0;
 let lastUpdate = 0;
 let animationTimer = 0;
 
+// Persistence
+const STORAGE_KEY = 'pixel_pet_state';
+
+function saveState() {
+    const stateToSave = {
+        hunger: pet.hunger,
+        happiness: pet.happiness,
+        timestamp: Date.now()
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+}
+
+function loadState() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            const now = Date.now();
+            const elapsedMs = now - parsed.timestamp;
+            // 1 unit change per UPDATE_INTERVAL
+            const unitsElapsed = Math.floor(elapsedMs / UPDATE_INTERVAL);
+
+            pet.hunger = Math.min(100, parsed.hunger + unitsElapsed);
+            pet.happiness = Math.max(0, parsed.happiness - unitsElapsed);
+        } catch (e) {
+            console.error("Failed to parse saved state", e);
+        }
+    }
+}
+
 // Simple pixel art definitions (1s are color, 0s are empty)
 const spriteIdle1 = [
     [0, 1, 1, 0],
@@ -107,6 +137,7 @@ function update(deltaTime) {
         if (pet.happiness > 0) pet.happiness -= 1;
 
         updateUI();
+        saveState();
     }
 }
 
@@ -132,13 +163,19 @@ document.getElementById('btnFeed').addEventListener('click', () => {
     pet.hunger = Math.max(0, pet.hunger - 15);
     pet.state = 'eating';
     updateUI();
+    saveState();
 });
 
 document.getElementById('btnPlay').addEventListener('click', () => {
     pet.happiness = Math.min(100, pet.happiness + 15);
     pet.state = 'playing';
     updateUI();
+    saveState();
 });
+
+// Initialize state from storage
+loadState();
+updateUI();
 
 // Start game
 requestAnimationFrame(gameLoop);
