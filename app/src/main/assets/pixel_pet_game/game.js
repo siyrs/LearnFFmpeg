@@ -14,6 +14,21 @@ let pet = {
     frame: 0
 };
 
+const savedState = localStorage.getItem('pixelPetState');
+if (savedState) {
+    try {
+        const parsedState = JSON.parse(savedState);
+        if (typeof parsedState.hunger === 'number' && !isNaN(parsedState.hunger)) {
+            pet.hunger = parsedState.hunger;
+        }
+        if (typeof parsedState.happiness === 'number' && !isNaN(parsedState.happiness)) {
+            pet.happiness = parsedState.happiness;
+        }
+    } catch (e) {
+        console.error("Could not parse saved pet state", e);
+    }
+}
+
 // Canvas Setup
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -121,11 +136,27 @@ function gameLoop(timestamp) {
     requestAnimationFrame(gameLoop);
 }
 
+// Save to local storage
+function saveState() {
+    localStorage.setItem('pixelPetState', JSON.stringify({
+        hunger: pet.hunger,
+        happiness: pet.happiness
+    }));
+}
+
 // Update DOM elements
 function updateUI() {
     hungerDisplay.innerText = pet.hunger;
     happinessDisplay.innerText = pet.happiness;
 }
+
+// Save state when page is unloaded or hidden
+window.addEventListener('beforeunload', saveState);
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+        saveState();
+    }
+});
 
 // Interactions
 document.getElementById('btnFeed').addEventListener('click', () => {
