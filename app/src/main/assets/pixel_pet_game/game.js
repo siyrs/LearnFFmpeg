@@ -2,7 +2,7 @@
 const CANVAS_WIDTH = 300;
 const CANVAS_HEIGHT = 300;
 const PET_SIZE = 10; // "Pixel" size multiplier
-const UPDATE_INTERVAL = 1000; // Update stats every second
+const UPDATE_INTERVAL = 60000; // Update stats every 60 seconds
 
 // Pet State
 let pet = {
@@ -24,6 +24,31 @@ const happinessDisplay = document.getElementById('happinessValue');
 let lastTime = 0;
 let lastUpdate = 0;
 let animationTimer = 0;
+
+function saveState() {
+    localStorage.setItem('pixelPetState', JSON.stringify({
+        hunger: pet.hunger,
+        happiness: pet.happiness,
+        lastSaved: Date.now()
+    }));
+}
+
+function loadState() {
+    const saved = localStorage.getItem('pixelPetState');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            const now = Date.now();
+            const elapsed = now - (data.lastSaved || now);
+            const intervals = Math.floor(elapsed / UPDATE_INTERVAL);
+
+            pet.hunger = Math.min(100, (data.hunger !== undefined ? data.hunger : 50) + intervals);
+            pet.happiness = Math.max(0, (data.happiness !== undefined ? data.happiness : 50) - intervals);
+        } catch (e) {
+            console.error("Error loading state", e);
+        }
+    }
+}
 
 // Simple pixel art definitions (1s are color, 0s are empty)
 const spriteIdle1 = [
@@ -107,6 +132,7 @@ function update(deltaTime) {
         if (pet.happiness > 0) pet.happiness -= 1;
 
         updateUI();
+        saveState();
     }
 }
 
@@ -132,13 +158,17 @@ document.getElementById('btnFeed').addEventListener('click', () => {
     pet.hunger = Math.max(0, pet.hunger - 15);
     pet.state = 'eating';
     updateUI();
+    saveState();
 });
 
 document.getElementById('btnPlay').addEventListener('click', () => {
     pet.happiness = Math.min(100, pet.happiness + 15);
     pet.state = 'playing';
     updateUI();
+    saveState();
 });
 
 // Start game
+loadState();
+updateUI();
 requestAnimationFrame(gameLoop);
