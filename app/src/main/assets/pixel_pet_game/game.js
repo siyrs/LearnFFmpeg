@@ -2,7 +2,7 @@
 const CANVAS_WIDTH = 300;
 const CANVAS_HEIGHT = 300;
 const PET_SIZE = 10; // "Pixel" size multiplier
-const UPDATE_INTERVAL = 1000; // Update stats every second
+const UPDATE_INTERVAL = 60000; // Update stats every 60 seconds
 
 // Pet State
 let pet = {
@@ -107,6 +107,7 @@ function update(deltaTime) {
         if (pet.happiness > 0) pet.happiness -= 1;
 
         updateUI();
+        saveState();
     }
 }
 
@@ -132,13 +133,53 @@ document.getElementById('btnFeed').addEventListener('click', () => {
     pet.hunger = Math.max(0, pet.hunger - 15);
     pet.state = 'eating';
     updateUI();
+    saveState();
 });
 
 document.getElementById('btnPlay').addEventListener('click', () => {
     pet.happiness = Math.min(100, pet.happiness + 15);
     pet.state = 'playing';
     updateUI();
+    saveState();
 });
+
+function saveState() {
+    const state = {
+        pet: pet,
+        timestamp: Date.now()
+    };
+    localStorage.setItem('pixel_pet_state', JSON.stringify(state));
+}
+
+function loadState() {
+    const savedStateStr = localStorage.getItem('pixel_pet_state');
+    if (savedStateStr) {
+        try {
+            const savedState = JSON.parse(savedStateStr);
+            if (savedState.pet) {
+                // Ensure state transition to idle just in case
+                savedState.pet.state = 'idle';
+                pet = savedState.pet;
+            }
+            if (savedState.timestamp) {
+                const now = Date.now();
+                const elapsedMs = now - savedState.timestamp;
+                const missedIntervals = Math.floor(elapsedMs / UPDATE_INTERVAL);
+
+                if (missedIntervals > 0) {
+                    pet.hunger = Math.min(100, pet.hunger + missedIntervals);
+                    pet.happiness = Math.max(0, pet.happiness - missedIntervals);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load state from localStorage', e);
+        }
+    }
+}
+
+// Initialize
+loadState();
+updateUI();
 
 // Start game
 requestAnimationFrame(gameLoop);
