@@ -2,7 +2,7 @@
 const CANVAS_WIDTH = 300;
 const CANVAS_HEIGHT = 300;
 const PET_SIZE = 10; // "Pixel" size multiplier
-const UPDATE_INTERVAL = 1000; // Update stats every second
+const UPDATE_INTERVAL = 60000; // Update stats every minute
 
 // Pet State
 let pet = {
@@ -121,10 +121,21 @@ function gameLoop(timestamp) {
     requestAnimationFrame(gameLoop);
 }
 
+// Helper to save state to localStorage
+function saveState() {
+    const state = {
+        hunger: pet.hunger,
+        happiness: pet.happiness,
+        timestamp: Date.now()
+    };
+    localStorage.setItem('pixelPetState', JSON.stringify(state));
+}
+
 // Update DOM elements
 function updateUI() {
     hungerDisplay.innerText = pet.hunger;
     happinessDisplay.innerText = pet.happiness;
+    saveState();
 }
 
 // Interactions
@@ -140,5 +151,29 @@ document.getElementById('btnPlay').addEventListener('click', () => {
     updateUI();
 });
 
+// Initialize Game
+function init() {
+    const savedStateStr = localStorage.getItem('pixelPetState');
+    if (savedStateStr) {
+        try {
+            const savedState = JSON.parse(savedStateStr);
+            const now = Date.now();
+            const timeDiff = now - savedState.timestamp;
+
+            // Calculate missed intervals
+            const intervalsMissed = Math.floor(timeDiff / UPDATE_INTERVAL);
+
+            pet.hunger = Math.min(100, savedState.hunger + intervalsMissed);
+            pet.happiness = Math.max(0, savedState.happiness - intervalsMissed);
+
+        } catch (e) {
+            console.error('Error parsing saved state', e);
+        }
+    }
+
+    updateUI();
+    requestAnimationFrame(gameLoop);
+}
+
 // Start game
-requestAnimationFrame(gameLoop);
+init();
