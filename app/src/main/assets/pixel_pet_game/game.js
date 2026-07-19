@@ -2,7 +2,7 @@
 const CANVAS_WIDTH = 300;
 const CANVAS_HEIGHT = 300;
 const PET_SIZE = 10; // "Pixel" size multiplier
-const UPDATE_INTERVAL = 1000; // Update stats every second
+const UPDATE_INTERVAL = 60000; // Update stats every minute
 
 // Pet State
 let pet = {
@@ -13,6 +13,34 @@ let pet = {
     state: 'idle',   // idle, eating, playing
     frame: 0
 };
+
+// Persistence functions
+function saveState() {
+    localStorage.setItem('pixel_pet_hunger', pet.hunger);
+    localStorage.setItem('pixel_pet_happiness', pet.happiness);
+    localStorage.setItem('pixel_pet_last_saved', Date.now());
+}
+
+function loadState() {
+    const savedHunger = localStorage.getItem('pixel_pet_hunger');
+    const savedHappiness = localStorage.getItem('pixel_pet_happiness');
+    const lastSavedTime = localStorage.getItem('pixel_pet_last_saved');
+
+    if (savedHunger !== null && savedHappiness !== null && lastSavedTime !== null) {
+        pet.hunger = parseInt(savedHunger, 10);
+        pet.happiness = parseInt(savedHappiness, 10);
+
+        const now = Date.now();
+        const elapsedMs = now - parseInt(lastSavedTime, 10);
+        const intervalsPassed = Math.floor(elapsedMs / UPDATE_INTERVAL);
+
+        if (intervalsPassed > 0) {
+            pet.hunger = Math.min(100, pet.hunger + intervalsPassed);
+            pet.happiness = Math.max(0, pet.happiness - intervalsPassed);
+            saveState(); // Update saved state with new baseline
+        }
+    }
+}
 
 // Canvas Setup
 const canvas = document.getElementById('gameCanvas');
@@ -107,6 +135,7 @@ function update(deltaTime) {
         if (pet.happiness > 0) pet.happiness -= 1;
 
         updateUI();
+        saveState();
     }
 }
 
@@ -132,13 +161,19 @@ document.getElementById('btnFeed').addEventListener('click', () => {
     pet.hunger = Math.max(0, pet.hunger - 15);
     pet.state = 'eating';
     updateUI();
+    saveState();
 });
 
 document.getElementById('btnPlay').addEventListener('click', () => {
     pet.happiness = Math.min(100, pet.happiness + 15);
     pet.state = 'playing';
     updateUI();
+    saveState();
 });
+
+// Load state before starting
+loadState();
+updateUI();
 
 // Start game
 requestAnimationFrame(gameLoop);
