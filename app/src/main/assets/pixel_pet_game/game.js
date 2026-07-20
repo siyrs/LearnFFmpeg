@@ -2,7 +2,7 @@
 const CANVAS_WIDTH = 300;
 const CANVAS_HEIGHT = 300;
 const PET_SIZE = 10; // "Pixel" size multiplier
-const UPDATE_INTERVAL = 1000; // Update stats every second
+const UPDATE_INTERVAL = 60000; // Update stats every minute
 
 // Pet State
 let pet = {
@@ -107,6 +107,41 @@ function update(deltaTime) {
         if (pet.happiness > 0) pet.happiness -= 1;
 
         updateUI();
+        saveState();
+    }
+}
+
+// State Management
+function saveState() {
+    const state = {
+        hunger: pet.hunger,
+        happiness: pet.happiness,
+        lastUpdated: Date.now()
+    };
+    localStorage.setItem('pixelPetState', JSON.stringify(state));
+}
+
+function loadState() {
+    const savedState = localStorage.getItem('pixelPetState');
+    if (savedState) {
+        try {
+            const state = JSON.parse(savedState);
+            pet.hunger = state.hunger;
+            pet.happiness = state.happiness;
+
+            // Offline progression
+            const now = Date.now();
+            const elapsed = now - state.lastUpdated;
+            const ticks = Math.floor(elapsed / UPDATE_INTERVAL);
+
+            if (ticks > 0) {
+                pet.hunger = Math.min(100, pet.hunger + ticks);
+                pet.happiness = Math.max(0, pet.happiness - ticks);
+                saveState();
+            }
+        } catch (e) {
+            console.error("Failed to load state", e);
+        }
     }
 }
 
@@ -132,13 +167,19 @@ document.getElementById('btnFeed').addEventListener('click', () => {
     pet.hunger = Math.max(0, pet.hunger - 15);
     pet.state = 'eating';
     updateUI();
+    saveState();
 });
 
 document.getElementById('btnPlay').addEventListener('click', () => {
     pet.happiness = Math.min(100, pet.happiness + 15);
     pet.state = 'playing';
     updateUI();
+    saveState();
 });
+
+// Initialize state
+loadState();
+updateUI();
 
 // Start game
 requestAnimationFrame(gameLoop);
