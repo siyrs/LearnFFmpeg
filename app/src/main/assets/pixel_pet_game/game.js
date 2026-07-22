@@ -2,7 +2,7 @@
 const CANVAS_WIDTH = 300;
 const CANVAS_HEIGHT = 300;
 const PET_SIZE = 10; // "Pixel" size multiplier
-const UPDATE_INTERVAL = 1000; // Update stats every second
+const UPDATE_INTERVAL = 60000; // Update stats every 60 seconds
 
 // Pet State
 let pet = {
@@ -107,6 +107,7 @@ function update(deltaTime) {
         if (pet.happiness > 0) pet.happiness -= 1;
 
         updateUI();
+        saveState();
     }
 }
 
@@ -121,6 +122,38 @@ function gameLoop(timestamp) {
     requestAnimationFrame(gameLoop);
 }
 
+// Save and Load State
+function saveState() {
+    localStorage.setItem('pixel_pet_state', JSON.stringify({
+        hunger: pet.hunger,
+        happiness: pet.happiness,
+        lastSaved: Date.now()
+    }));
+}
+
+function loadState() {
+    const savedStateStr = localStorage.getItem('pixel_pet_state');
+    if (savedStateStr) {
+        try {
+            const savedState = JSON.parse(savedStateStr);
+            if (savedState.lastSaved) {
+                const now = Date.now();
+                const elapsedMs = now - savedState.lastSaved;
+                const elapsedIntervals = Math.floor(elapsedMs / UPDATE_INTERVAL);
+
+                pet.hunger = Math.min(100, (savedState.hunger ?? 50) + elapsedIntervals);
+                pet.happiness = Math.max(0, (savedState.happiness ?? 50) - elapsedIntervals);
+            } else {
+                pet.hunger = savedState.hunger ?? 50;
+                pet.happiness = savedState.happiness ?? 50;
+            }
+        } catch (e) {
+            console.error("Failed to parse saved state", e);
+        }
+    }
+    updateUI();
+}
+
 // Update DOM elements
 function updateUI() {
     hungerDisplay.innerText = pet.hunger;
@@ -132,13 +165,18 @@ document.getElementById('btnFeed').addEventListener('click', () => {
     pet.hunger = Math.max(0, pet.hunger - 15);
     pet.state = 'eating';
     updateUI();
+    saveState();
 });
 
 document.getElementById('btnPlay').addEventListener('click', () => {
     pet.happiness = Math.min(100, pet.happiness + 15);
     pet.state = 'playing';
     updateUI();
+    saveState();
 });
+
+// Initialization
+loadState();
 
 // Start game
 requestAnimationFrame(gameLoop);
