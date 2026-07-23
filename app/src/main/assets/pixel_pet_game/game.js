@@ -2,17 +2,38 @@
 const CANVAS_WIDTH = 300;
 const CANVAS_HEIGHT = 300;
 const PET_SIZE = 10; // "Pixel" size multiplier
-const UPDATE_INTERVAL = 1000; // Update stats every second
+const UPDATE_INTERVAL = 60000; // Update stats every 60 seconds
+
+// State Persistence and Offline Progression
+const savedHunger = JSON.parse(localStorage.getItem('pet_hunger'));
+const savedHappiness = JSON.parse(localStorage.getItem('pet_happiness'));
+const lastSavedTime = JSON.parse(localStorage.getItem('pet_lastSavedTime'));
 
 // Pet State
 let pet = {
     x: CANVAS_WIDTH / 2,
     y: CANVAS_HEIGHT / 2,
-    hunger: 50,      // 0-100, 100 is starving
-    happiness: 50,   // 0-100, 100 is ecstatic
+    hunger: savedHunger ?? 50,      // 0-100, 100 is starving
+    happiness: savedHappiness ?? 50,   // 0-100, 100 is ecstatic
     state: 'idle',   // idle, eating, playing
     frame: 0
 };
+
+if (lastSavedTime) {
+    const elapsedTime = Date.now() - lastSavedTime;
+    const intervalsPassed = Math.floor(elapsedTime / UPDATE_INTERVAL);
+
+    if (intervalsPassed > 0) {
+        pet.hunger = Math.min(100, pet.hunger + intervalsPassed);
+        pet.happiness = Math.max(0, pet.happiness - intervalsPassed);
+    }
+}
+
+function saveState() {
+    localStorage.setItem('pet_hunger', pet.hunger);
+    localStorage.setItem('pet_happiness', pet.happiness);
+    localStorage.setItem('pet_lastSavedTime', Date.now());
+}
 
 // Canvas Setup
 const canvas = document.getElementById('gameCanvas');
@@ -107,6 +128,7 @@ function update(deltaTime) {
         if (pet.happiness > 0) pet.happiness -= 1;
 
         updateUI();
+        saveState();
     }
 }
 
@@ -132,13 +154,18 @@ document.getElementById('btnFeed').addEventListener('click', () => {
     pet.hunger = Math.max(0, pet.hunger - 15);
     pet.state = 'eating';
     updateUI();
+    saveState();
 });
 
 document.getElementById('btnPlay').addEventListener('click', () => {
     pet.happiness = Math.min(100, pet.happiness + 15);
     pet.state = 'playing';
     updateUI();
+    saveState();
 });
+
+// Initialize UI with initial state (including offline progression)
+updateUI();
 
 // Start game
 requestAnimationFrame(gameLoop);
